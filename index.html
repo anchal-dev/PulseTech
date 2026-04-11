@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseTech Hospital Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14; --bg2: #0f1420; --bg3: #151b28; --bg4: #1c2335;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0; --text2: #8892a4; --text3: #4a5568;
+    --accent: #00d4aa; --accent2: #0099ff;
+    --red: #ff4757; --red-bg: rgba(255,71,87,0.1);
+    --amber: #ffa502; --amber-bg: rgba(255,165,2,0.1);
+    --green: #2ed573; --green-bg: rgba(46,213,115,0.1);
+    --blue: #3d7eff; --blue-bg: rgba(61,126,255,0.1);
+    --purple: #a855f7; --purple-bg: rgba(168,85,247,0.1);
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --r: 8px; --r2: 12px; --r3: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+  .logo { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+  .logo-mark { display: flex; align-items: center; gap: 8px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .logo-icon::before { content: ''; position: absolute; width: 12px; height: 2px; background: var(--bg); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .logo-icon::after { content: ''; position: absolute; width: 2px; height: 12px; background: var(--bg); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .logo-text { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--text); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 10px; color: var(--text3); font-family: var(--font-mono); margin-top: 2px; }
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-section-label { font-size: 10px; font-family: var(--font-mono); color: var(--text3); padding: 12px 20px 6px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: var(--text2); cursor: pointer; transition: all 0.15s; font-size: 13.5px; font-weight: 400; border-left: 2px solid transparent; margin: 1px 0; }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,170,0.07); border-left-color: var(--accent); }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-family: var(--font-mono); padding: 1px 6px; border-radius: 10px; font-weight: 500; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+  .user-pill { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-bg); border: 1px solid var(--blue); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--blue); }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .user-role { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+  .online-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; margin-left: auto; }
+  .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+  .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 28px; height: 56px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--text); }
+  .topbar-sep { color: var(--text3); }
+  .topbar-sub { font-size: 13px; color: var(--text2); }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .live-pill { display: flex; align-items: center; gap: 6px; background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.3); color: var(--green); font-size: 11px; font-family: var(--font-mono); padding: 4px 10px; border-radius: 20px; }
+  .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+  .btn { padding: 7px 14px; border-radius: var(--r); font-size: 13px; font-family: var(--font-body); font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); }
+  .btn:hover { background: var(--bg4); color: var(--text); }
+  .btn-accent { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn-accent:hover { background: #00b896; border-color: #00b896; color: var(--bg); }
+  .content { padding: 24px 28px; }
+  .alert-banner { background: var(--red-bg); border: 1px solid rgba(255,71,87,0.3); border-radius: var(--r2); padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; animation: slide-in 0.3s ease; }
+  @keyframes slide-in { from{ transform: translateY(-8px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
+  .alert-text { flex: 1; font-size: 13px; color: #ff6b7a; }
+  .alert-text strong { color: var(--red); font-weight: 600; }
+  .alert-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 0 4px; }
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px 18px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 2px 2px 0 0; }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.amber::before { background: var(--amber); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.blue::before { background: var(--blue); }
+  .stat-card.purple::before { background: var(--purple); }
+  .stat-label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; font-family: var(--font-display); color: var(--text); line-height: 1; }
+  .stat-value.red { color: var(--red); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-change { font-size: 11px; color: var(--text3); margin-top: 5px; font-family: var(--font-mono); }
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-35 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .card-title { font-family: var(--font-display); font-weight: 600; font-size: 14px; color: var(--text); }
+  .card-badge { font-size: 10px; font-family: var(--font-mono); padding: 2px 8px; border-radius: 10px; }
+  .card-badge.accent { background: rgba(0,212,170,0.12); color: var(--accent); }
+  .card-badge.red { background: var(--red-bg); color: var(--red); }
+  .card-action { margin-left: auto; font-size: 12px; color: var(--accent); cursor: pointer; font-family: var(--font-mono); text-decoration: none; }
+  .card-body { padding: 16px 18px; }
+  .patient-list { display: flex; flex-direction: column; gap: 0; }
+  .patient-row { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+  .patient-row:hover { background: rgba(255,255,255,0.02); }
+  .patient-row:last-child { border-bottom: none; }
+  .patient-row.critical { background: rgba(255,71,87,0.04); }
+  .patient-row.critical:hover { background: rgba(255,71,87,0.07); }
+  .pat-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .pat-info { flex: 1; min-width: 0; }
+  .pat-name { font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pat-meta { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-top: 1px; }
+  .pat-vitals { display: flex; gap: 10px; align-items: center; }
+  .vital-chip { font-size: 11px; font-family: var(--font-mono); color: var(--text2); }
+  .vital-chip span { color: var(--text); }
+  .risk-badge { font-size: 10px; font-family: var(--font-mono); font-weight: 600; padding: 3px 9px; border-radius: 10px; white-space: nowrap; letter-spacing: 0.04em; }
+  .risk-badge.HIGH { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+  .risk-badge.MED { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,165,2,0.3); }
+  .risk-badge.LOW { background: var(--green-bg); color: var(--green); border: 1px solid rgba(46,213,115,0.3); }
+  .attn-tag { font-size: 10px; color: var(--red); font-family: var(--font-mono); animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
+  .ecg-mini { width: 60px; height: 28px; flex-shrink: 0; }
+  .appt-table { width: 100%; border-collapse: collapse; }
+  .appt-table th { font-size: 10px; font-family: var(--font-mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; }
+  .appt-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text2); vertical-align: middle; }
+  .appt-table tr:last-child td { border-bottom: none; }
+  .appt-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .appt-table tr.critical td:first-child { border-left: 2px solid var(--red); }
+  .time-slot { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+  .status-badge { font-size: 10px; font-family: var(--font-mono); padding: 2px 8px; border-radius: 10px; }
+  .status-badge.waiting { background: var(--amber-bg); color: var(--amber); }
+  .status-badge.in-progress { background: var(--blue-bg); color: var(--blue); }
+  .status-badge.done { background: var(--green-bg); color: var(--green); }
+  .status-badge.critical { background: var(--red-bg); color: var(--red); }
+  .insight-card { background: linear-gradient(135deg, rgba(0,212,170,0.06), rgba(61,126,255,0.04)); border: 1px solid rgba(0,212,170,0.2); border-radius: var(--r2); padding: 14px 16px; margin-bottom: 10px; }
+  .insight-label { font-size: 10px; font-family: var(--font-mono); color: var(--accent); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 6px; }
+  .insight-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .insight-text strong { color: var(--text); }
+  .resource-item { margin-bottom: 14px; }
+  .resource-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .resource-name { font-size: 13px; color: var(--text2); }
+  .resource-stat { font-size: 12px; font-family: var(--font-mono); }
+  .resource-bar { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+  .resource-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .chart-wrap { position: relative; height: 180px; }
+  .chart-wrap-sm { position: relative; height: 140px; }
+  .notif-list { display: flex; flex-direction: column; gap: 1px; }
+  .notif-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+  .notif-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .notif-dot.amber { background: var(--amber); }
+  .notif-dot.blue { background: var(--blue); }
+  .notif-content { flex: 1; }
+  .notif-msg { font-size: 12.5px; color: var(--text2); line-height: 1.4; }
+  .notif-msg strong { color: var(--text); }
+  .notif-time { font-size: 10px; color: var(--text3); font-family: var(--font-mono); margin-top: 2px; }
+  .notes-area { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; color: var(--text); font-family: var(--font-body); font-size: 13px; resize: vertical; min-height: 80px; outline: none; line-height: 1.5; }
+  .notes-area:focus { border-color: var(--accent); }
+  .notes-area::placeholder { color: var(--text3); }
+  .doctor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .doc-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+  .doc-info { flex: 1; }
+  .doc-name { font-size: 12.5px; color: var(--text); font-weight: 500; }
+  .doc-spec { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+  .doc-bar-wrap { flex: 1.5; }
+  .doc-bar { height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+  .doc-fill { height: 100%; border-radius: 2px; }
+  .doc-count { font-size: 11px; font-family: var(--font-mono); color: var(--text3); white-space: nowrap; }
+  .section-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .role-selector { display: flex; gap: 4px; }
+  .role-btn { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: var(--font-mono); background: var(--bg3); border: 1px solid var(--border); color: var(--text3); cursor: pointer; transition: all 0.15s; }
+  .role-btn.active { background: var(--bg4); border-color: var(--border2); color: var(--accent); }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
+  .modal-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r3); padding: 24px; width: 480px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+  .modal-close { float: right; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; line-height: 1; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .detail-label { font-size: 12px; color: var(--text3); font-family: var(--font-mono); }
+  .detail-value { font-size: 13px; color: var(--text); font-weight: 500; }
+  @media (max-width: 1200px) { .stats-row { grid-template-columns: repeat(3,1fr); } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon"></div>
+        <div>
+          <div class="logo-text">PulseTech</div>
+          <div class="logo-sub">v2.4.1 // LIVE</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="nav-section-label">Core</div>
+      <div class="nav-item active" onclick="setPage('dashboard',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="9" y="1" width="5" height="5" rx="1"/><rect x="1" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="setPage('appointments',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="13" height="11" rx="1.5"/><path d="M5 1v4M11 1v4M1 7h13"/></svg>
+        Appointments <span class="nav-badge">8</span>
+      </div>
+      <div class="nav-item" onclick="setPage('patients',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6"/></svg>
+        Patients
+      </div>
+      <div class="nav-section-label">Analytics</div>
+      <div class="nav-item" onclick="setPage('ai',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a6 6 0 0 0 0 12M8 2a6 6 0 0 1 0 12M8 2v12M2 8h12"/></svg>
+        AI Insights
+      </div>
+      <div class="nav-item" onclick="setPage('resources',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V7l6-5 6 5v5"/><rect x="5" y="9" width="3" height="4"/><rect x="8" y="9" width="3" height="4"/></svg>
+        Resources
+      </div>
+      <div class="nav-section-label">Tools</div>
+      <div class="nav-item" onclick="setPage('reports',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="10" height="14" rx="1"/><path d="M5 5h5M5 8h5M5 11h3"/></svg>
+        Reports
+      </div>
+      <div class="nav-item" onclick="setPage('settings',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42"/></svg>
+        Settings
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="avatar">DR</div>
+        <div>
+          <div class="user-name">Dr. Riya Mehta</div>
+          <div class="user-role" id="roleLabel">doctor</div>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="pageTitle">Dashboard</span>
+      <span class="topbar-sep">/</span>
+      <span class="topbar-sub" id="pageDate"></span>
+      <div class="topbar-right">
+        <div class="live-pill"><div class="live-dot"></div>LIVE SYNC</div>
+        <div class="role-selector">
+          <div class="role-btn active" onclick="setRole(this,'Doctor')">Doctor</div>
+          <div class="role-btn" onclick="setRole(this,'Admin')">Admin</div>
+          <div class="role-btn" onclick="setRole(this,'Reception')">Reception</div>
+        </div>
+        <button class="btn btn-accent" onclick="exportReport()">↓ Export</button>
+      </div>
+    </div>
+    <div class="content" id="mainContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="patModal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="patModalBox"></div>
+</div>
+
+<script>
+const patients = [
+  { id:1,  name:'Arjun Sharma',  age:68, risk:'HIGH', ward:'ICU',     hr:112, spo2:89, temp:38.8, time:'09:00', status:'critical',    doc:'Dr. Kapoor',  notes:'Post-MI monitoring',       diag:'Myocardial Infarction' },
+  { id:2,  name:'Priya Singh',   age:54, risk:'HIGH', ward:'Cardiac', hr:98,  spo2:91, temp:37.4, time:'09:30', status:'in-progress', doc:'Dr. Mehta',   notes:'Arrhythmia episode',       diag:'Atrial Fibrillation' },
+  { id:3,  name:'Kavita Reddy',  age:72, risk:'HIGH', ward:'ICU',     hr:126, spo2:87, temp:39.2, time:'10:00', status:'critical',    doc:'Dr. Rao',     notes:'Sepsis protocol',           diag:'Severe Sepsis' },
+  { id:4,  name:'Ramesh Gupta',  age:61, risk:'MED',  ward:'General', hr:84,  spo2:95, temp:37.1, time:'10:30', status:'waiting',     doc:'Dr. Mehta',   notes:'Routine follow-up',        diag:'Hypertension' },
+  { id:5,  name:'Sunita Patel',  age:45, risk:'MED',  ward:'General', hr:76,  spo2:96, temp:36.9, time:'11:00', status:'waiting',     doc:'Dr. Agarwal', notes:'Pre-op evaluation',        diag:'Appendicitis' },
+  { id:6,  name:'Mohan Verma',   age:38, risk:'LOW',  ward:'OPD',     hr:72,  spo2:98, temp:36.6, time:'11:30', status:'waiting',     doc:'Dr. Shah',    notes:'Annual checkup',           diag:'General Wellness' },
+  { id:7,  name:'Lakshmi Iyer',  age:55, risk:'HIGH', ward:'Neuro',   hr:104, spo2:93, temp:37.8, time:'12:00', status:'in-progress', doc:'Dr. Kapoor',  notes:'Post-stroke assessment',   diag:'Ischemic Stroke' },
+  { id:8,  name:'Vikram Joshi',  age:49, risk:'MED',  ward:'Cardiac', hr:88,  spo2:94, temp:37.3, time:'12:30', status:'waiting',     doc:'Dr. Mehta',   notes:'Stress test follow-up',   diag:'Angina' },
+  { id:9,  name:'Deepa Nair',    age:33, risk:'LOW',  ward:'OPD',     hr:68,  spo2:99, temp:36.4, time:'13:00', status:'done',        doc:'Dr. Shah',    notes:'Prescription renewal',     diag:'Asthma' },
+  { id:10, name:'Rajiv Kumar',   age:77, risk:'HIGH', ward:'ICU',     hr:118, spo2:88, temp:38.5, time:'13:30', status:'critical',    doc:'Dr. Rao',     notes:'Respiratory distress',     diag:'COPD Exacerbation' },
+];
+
+const doctors = [
+  { name:'Dr. Mehta',   spec:'Cardiology',   load:4, max:6, color:'#3d7eff' },
+  { name:'Dr. Kapoor',  spec:'Neurology',    load:5, max:6, color:'#a855f7' },
+  { name:'Dr. Rao',     spec:'Critical Care',load:3, max:4, color:'#ff4757' },
+  { name:'Dr. Agarwal', spec:'Surgery',      load:2, max:6, color:'#00d4aa' },
+  { name:'Dr. Shah',    spec:'General',      load:2, max:8, color:'#ffa502' },
+];
+
+const notifications = [
+  { type:'red',   msg:'<strong>Kavita Reddy</strong> — SpO2 dropped to 87%. Immediate attention required.', time:'2 min ago' },
+  { type:'red',   msg:'<strong>Arjun Sharma</strong> — Tachycardia detected (HR: 112 bpm).', time:'7 min ago' },
+  { type:'amber', msg:'<strong>Rajiv Kumar</strong> — Temperature spiked to 38.5°C, monitoring escalated.', time:'15 min ago' },
+  { type:'blue',  msg:'<strong>ICU Bed 3</strong> — Cleared and ready for next patient.', time:'28 min ago' },
+  { type:'blue',  msg:'Scheduled maintenance on Ventilator B in <strong>2 hours</strong>.', time:'1 hr ago' },
+];
+
+const resources = [
+  { name:'ICU Beds',         used:7,  total:10, color:'#ff4757' },
+  { name:'General Wards',    used:18, total:30, color:'#3d7eff' },
+  { name:'Ventilators',      used:5,  total:8,  color:'#a855f7' },
+  { name:'Cardiac Monitors', used:9,  total:12, color:'#ffa502' },
+  { name:'Surgical Rooms',   used:2,  total:4,  color:'#00d4aa' },
+];
+
+let currentPage = 'dashboard';
+let noteText = 'Patient Arjun Sharma showing signs of improvement. Will re-assess ECG at 14:00. Continue current Heparin protocol.';
+let chartInstances = {};
+
+function setPage(p, el) {
+  currentPage = p;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('pageTitle').textContent = {dashboard:'Dashboard',appointments:'Appointments',patients:'Patients',ai:'AI Insights',resources:'Resources',reports:'Reports',settings:'Settings'}[p];
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+  chartInstances = {};
+  render();
+}
+
+function setRole(el, role) {
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('roleLabel').textContent = role.toLowerCase();
+}
+
+function ecgPath(w, h, color) {
+  const pts = [];
+  const seg = w / 3;
+  for (let i = 0; i < 3; i++) {
+    const x = i * seg;
+    pts.push([x,h/2],[x+seg*0.1,h/2],[x+seg*0.15,h/2-2],[x+seg*0.2,h/2+1],
+             [x+seg*0.25,h/2-h*0.7],[x+seg*0.28,h/2+h*0.4],
+             [x+seg*0.32,h/2-h*0.15],[x+seg*0.38,h/2],[x+seg,h/2]);
+  }
+  const d = pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  return `<svg style="width:${w}px;height:${h}px;flex-shrink:0;" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function riskColor(r){ return r==='HIGH'?'#ff4757':r==='MED'?'#ffa502':'#2ed573'; }
+function riskBg(r){ return r==='HIGH'?'rgba(255,71,87,0.12)':r==='MED'?'rgba(255,165,2,0.12)':'rgba(46,213,115,0.12)'; }
+function initials(n){ return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+function openPatient(id) {
+  const p = patients.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('patModalBox').innerHTML = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div class="pat-avatar" style="width:44px;height:44px;font-size:15px;background:${riskBg(p.risk)};color:${riskColor(p.risk)};">${initials(p.name)}</div>
+      <div><div style="font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--text);">${p.name}</div>
+      <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono);">Age ${p.age} · ${p.ward} · ${p.diag}</div></div>
+      <span class="risk-badge ${p.risk}" style="margin-left:auto;">${p.risk} RISK</span>
+    </div>
+    ${p.risk==='HIGH'?'<div style="background:var(--red-bg);border:1px solid rgba(255,71,87,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);font-family:var(--font-mono);margin-bottom:16px;">⚠ IMMEDIATE ATTENTION REQUIRED</div>':''}
+    <div style="margin-bottom:16px;">${ecgPath(420,60,riskColor(p.risk))}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);">Heart Rate</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--font-display);color:${p.hr>100?'var(--red)':'var(--text)'};">${p.hr}</div>
+        <div style="font-size:10px;color:var(--text3);">bpm</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);">SpO2</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--font-display);color:${p.spo2<93?'var(--red)':p.spo2<96?'var(--amber)':'var(--text)'};">${p.spo2}%</div>
+        <div style="font-size:10px;color:var(--text3);">oxygen sat.</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);">Temperature</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--font-display);color:${p.temp>38?'var(--amber)':'var(--text)'};">${p.temp}°C</div>
+        <div style="font-size:10px;color:var(--text3);">body temp</div>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:6px;">PHYSICIAN NOTES</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">${p.notes}</div>
+    </div>
+    <div class="detail-row"><span class="detail-label">Attending</span><span class="detail-value">${p.doc}</span></div>
+    <div class="detail-row"><span class="detail-label">Appointment</span><span class="detail-value">${p.time}</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge ${p.status}">${p.status.replace('-',' ')}</span></span></div>
+  `;
+  document.getElementById('patModal').style.display = 'flex';
+}
+function closeModal(){ document.getElementById('patModal').style.display='none'; }
+
+function exportReport() {
+  const rows=[['Name','Age','Risk','Ward','HR','SpO2','Temp','Time','Doctor','Diagnosis']];
+  patients.forEach(p=>rows.push([p.name,p.age,p.risk,p.ward,p.hr,p.spo2,p.temp,p.time,p.doc,p.diag]));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='pulsetech_report.csv'; a.click();
+}
+
+function makeChart(id, type, data, options) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  chartInstances[id] = new Chart(ctx, { type, data, options });
+}
+
+function render() {
+  const el = document.getElementById('mainContent');
+  const high = patients.filter(p=>p.risk==='HIGH').length;
+  const med  = patients.filter(p=>p.risk==='MED').length;
+  const low  = patients.filter(p=>p.risk==='LOW').length;
+  const sorted = [...patients].sort((a,b)=>{ const o={HIGH:0,MED:1,LOW:2}; return o[a.risk]-o[b.risk]||b.age-a.age; });
+
+  const chartOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#1c2335',titleColor:'#e8eaf0',bodyColor:'#8892a4',padding:10,cornerRadius:8} },
+    scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4a5568',font:{family:'IBM Plex Mono',size:10}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4a5568',font:{family:'IBM Plex Mono',size:10}}} }
+  };
+
+  if (currentPage === 'dashboard') {
+    el.innerHTML = `
+      <div class="alert-banner">
+        <span style="font-size:16px;">⚠</span>
+        <span class="alert-text"><strong>3 CRITICAL PATIENTS</strong> — Arjun Sharma, Kavita Reddy, Rajiv Kumar require immediate attention in ICU</span>
+        <button class="alert-close" onclick="this.parentNode.remove()">×</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card red"><div class="stat-label">HIGH RISK</div><div class="stat-value red">${high}</div><div class="stat-change down">↑ 2 from yesterday</div></div>
+        <div class="stat-card amber"><div class="stat-label">MED RISK</div><div class="stat-value amber">${med}</div><div class="stat-change">— stable</div></div>
+        <div class="stat-card green"><div class="stat-label">LOW RISK</div><div class="stat-value green">${low}</div><div class="stat-change up">↓ 1 from yesterday</div></div>
+        <div class="stat-card blue"><div class="stat-label">TODAY'S APPTS</div><div class="stat-value">${patients.length}</div><div class="stat-change">8 pending</div></div>
+        <div class="stat-card purple"><div class="stat-label">ICU OCCUPANCY</div><div class="stat-value">70%</div><div class="stat-change down">7 / 10 beds</div></div>
+      </div>
+      <div class="grid-35">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Patient Priority Queue</span><span class="card-badge red">5 HIGH RISK</span><span class="card-action">View all →</span></div>
+          <div class="patient-list">
+            ${sorted.slice(0,7).map(p=>`
+              <div class="patient-row ${p.risk==='HIGH'?'critical':''}" onclick="openPatient(${p.id})">
+                <div class="pat-avatar" style="background:${riskBg(p.risk)};color:${riskColor(p.risk)};">${initials(p.name)}</div>
+                <div class="pat-info"><div class="pat-name">${p.name}</div><div class="pat-meta">${p.age}y · ${p.ward} · ${p.doc}</div></div>
+                ${ecgPath(62,26,riskColor(p.risk))}
+                <div class="pat-vitals"><div class="vital-chip">HR <span>${p.hr}</span></div><div class="vital-chip">O₂ <span>${p.spo2}%</span></div></div>
+                <div><span class="risk-badge ${p.risk}">${p.risk}</span>${p.risk==='HIGH'?'<div class="attn-tag">! ATTN</div>':''}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Risk Distribution</span></div>
+            <div class="card-body">
+              <div class="chart-wrap-sm"><canvas id="riskChart" role="img" aria-label="Doughnut: ${high} high, ${med} medium, ${low} low risk"></canvas></div>
+              <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;">
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#ff4757;display:inline-block;"></span>HIGH ${high}</span>
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#ffa502;display:inline-block;"></span>MED ${med}</span>
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#2ed573;display:inline-block;"></span>LOW ${low}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">7-Day Trend</span></div>
+            <div class="card-body">
+              <div style="display:flex;gap:14px;margin-bottom:8px;">
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#ff4757;display:inline-block;"></span>High Risk</span>
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#3d7eff;display:inline-block;"></span>Total</span>
+              </div>
+              <div class="chart-wrap-sm"><canvas id="trendChart" role="img" aria-label="7-day patient trend line chart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Notifications</span><span class="card-badge red">3 urgent</span></div>
+          <div class="notif-list">
+            ${notifications.map(n=>`<div class="notif-item"><div class="notif-dot ${n.type}"></div><div class="notif-content"><div class="notif-msg">${n.msg}</div><div class="notif-time">${n.time}</div></div></div>`).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Doctor Notes</span><span class="card-badge accent">Auto-saved</span></div>
+          <div class="card-body">
+            <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:8px;">CURRENT SESSION · Dr. Mehta</div>
+            <textarea class="notes-area" id="docNotes" placeholder="Add clinical notes...">${noteText}</textarea>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn" onclick="noteText=document.getElementById('docNotes').value;alert('Note saved.')">Save Note</button>
+              <button class="btn" style="color:var(--accent);border-color:rgba(0,212,170,0.3);" onclick="document.getElementById('docNotes').value=''">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    setTimeout(() => {
+      makeChart('riskChart','doughnut',{labels:['HIGH','MEDIUM','LOW'],datasets:[{data:[high,med,low],backgroundColor:['#ff4757','#ffa502','#2ed573'],borderWidth:0,hoverOffset:4}]},{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c2335',titleColor:'#e8eaf0',bodyColor:'#8892a4',padding:10,cornerRadius:8}}});
+      makeChart('trendChart','line',{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'High Risk',data:[3,4,5,4,6,5,5],borderColor:'#ff4757',backgroundColor:'rgba(255,71,87,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3,pointBackgroundColor:'#ff4757'},{label:'Total Patients',data:[8,10,12,11,13,11,10],borderColor:'#3d7eff',backgroundColor:'rgba(61,126,255,0.06)',tension:0.4,fill:true,borderWidth:2,pointRadius:3,pointBackgroundColor:'#3d7eff'}]},chartOpts);
+    },50);
+
+  } else if (currentPage === 'appointments') {
+    el.innerHTML = `
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title">Today's Appointments</span><span class="card-badge accent">${patients.length} total</span>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn" onclick="filterAppt('all')">All</button>
+            <button class="btn" style="color:var(--red);border-color:rgba(255,71,87,0.3);" onclick="filterAppt('HIGH')">High Risk</button>
+            <button class="btn" style="color:var(--accent);border-color:rgba(0,212,170,0.3);" onclick="filterAppt('done')">Done</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="appt-table"><thead><tr><th>Time</th><th>Patient</th><th>Age</th><th>Diagnosis</th><th>Doctor</th><th>Ward</th><th>Risk</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="apptBody">
+            ${sorted.map(p=>`<tr class="${p.risk==='HIGH'?'critical':''}">
+              <td><span class="time-slot">${p.time}</span></td>
+              <td><div style="display:flex;align-items:center;gap:8px;"><div class="pat-avatar" style="width:26px;height:26px;font-size:10px;background:${riskBg(p.risk)};color:${riskColor(p.risk)};">${initials(p.name)}</div><span style="color:var(--text);font-weight:500;">${p.name}</span></div></td>
+              <td>${p.age}y</td><td style="color:var(--text);">${p.diag}</td><td>${p.doc}</td>
+              <td><span class="card-badge accent" style="font-size:10px;">${p.ward}</span></td>
+              <td><span class="risk-badge ${p.risk}">${p.risk}</span></td>
+              <td><span class="status-badge ${p.status}">${p.status.replace('-',' ')}</span></td>
+              <td><button class="btn" style="font-size:11px;padding:4px 10px;" onclick="openPatient(${p.id})">View</button></td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Appointment Load by Hour</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="hourlyChart" role="img" aria-label="Appointments per hour bar chart"></canvas></div></div>
+      </div>`;
+    setTimeout(()=>makeChart('hourlyChart','bar',{labels:['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM'],datasets:[{label:'Appointments',data:[2,3,4,3,2,3,4,3,2,1],backgroundColor:'rgba(0,212,170,0.25)',borderColor:'#00d4aa',borderWidth:1,borderRadius:4}]},{...chartOpts,scales:{x:{grid:{display:false},ticks:{color:'#4a5568',font:{family:'IBM Plex Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4a5568',font:{family:'IBM Plex Mono',size:10},stepSize:1},beginAtZero:true}}}),50);
+
+  } else if (currentPage === 'patients') {
+    el.innerHTML = `
+      <div class="section-title">Patient Monitoring — Real-time Vitals</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+        ${sorted.map(p=>`
+          <div class="card" style="cursor:pointer;border-color:${p.risk==='HIGH'?'rgba(255,71,87,0.3)':'var(--border)'};" onclick="openPatient(${p.id})">
+            <div class="card-header" style="padding:12px 14px;">
+              <div class="pat-avatar" style="width:32px;height:32px;font-size:11px;background:${riskBg(p.risk)};color:${riskColor(p.risk)};">${initials(p.name)}</div>
+              <div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">${p.age}y · ${p.ward}</div></div>
+              <span class="risk-badge ${p.risk}">${p.risk}</span>
+            </div>
+            <div style="padding:10px 14px 4px;">${ecgPath(240,40,riskColor(p.risk))}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border);">
+              <div style="padding:10px;text-align:center;border-right:1px solid var(--border);"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">HR</div><div style="font-size:17px;font-weight:700;font-family:var(--font-display);color:${p.hr>100?'var(--red)':'var(--text)'};">${p.hr}</div><div style="font-size:9px;color:var(--text3);">bpm</div></div>
+              <div style="padding:10px;text-align:center;border-right:1px solid var(--border);"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">SpO2</div><div style="font-size:17px;font-weight:700;font-family:var(--font-display);color:${p.spo2<93?'var(--red)':p.spo2<96?'var(--amber)':'var(--text)'};">${p.spo2}%</div><div style="font-size:9px;color:var(--text3);">oxygen</div></div>
+              <div style="padding:10px;text-align:center;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">TEMP</div><div style="font-size:17px;font-weight:700;font-family:var(--font-display);color:${p.temp>38?'var(--amber)':'var(--text)'};">${p.temp}°</div><div style="font-size:9px;color:var(--text3);">celsius</div></div>
+            </div>
+            ${p.risk==='HIGH'?'<div style="padding:6px 14px;background:var(--red-bg);border-top:1px solid rgba(255,71,87,0.2);font-size:10px;color:var(--red);font-family:var(--font-mono);">⚠ Immediate Attention Required</div>':''}
+          </div>`).join('')}
+      </div>`;
+
+  } else if (currentPage === 'ai') {
+    el.innerHTML = `
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div>
+          <div class="section-title">AI Clinical Insights</div>
+          <div class="insight-card"><div class="insight-label">URGENT CARE ALERT</div><div class="insight-text"><strong>Kavita Reddy</strong> — SpO2 at 87% with fever 39.2°C. Sepsis protocol initiated. Recommend immediate escalation to critical care team and blood culture repeat.</div></div>
+          <div class="insight-card"><div class="insight-label">TREND ANALYSIS</div><div class="insight-text"><strong>Arjun Sharma</strong> — HR trending upward over 4 hours. Heparin dosage may need adjustment. Recommend cardiology consult within 2 hours.</div></div>
+          <div class="insight-card"><div class="insight-label">RISK ESCALATION</div><div class="insight-text"><strong>Lakshmi Iyer</strong> — Post-stroke vitals showing signs of secondary ischemic event. BP monitoring every 15 min recommended.</div></div>
+          <div class="insight-card"><div class="insight-label">PREVENTIVE FLAG</div><div class="insight-text"><strong>Ramesh Gupta</strong> — BP medication compliance low based on vitals. Suggest patient counseling at today's appointment.</div></div>
+          <div class="insight-card" style="border-color:rgba(61,126,255,0.2);"><div class="insight-label" style="color:var(--blue);">DISCHARGE READY</div><div class="insight-text"><strong>Deepa Nair</strong> — All vitals stable. Appointment completed. Discharge with prescription renewal approved.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title">5-Day Load Prediction</span><span class="card-badge accent">AI Model v2</span></div>
+            <div class="card-body">
+              <div style="display:flex;gap:14px;margin-bottom:8px;">
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#a855f7;display:inline-block;"></span>Patient Load</span>
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:var(--font-mono);"><span style="width:8px;height:8px;border-radius:2px;background:#ff4757;display:inline-block;"></span>ICU Demand</span>
+              </div>
+              <div class="chart-wrap"><canvas id="icuChart" role="img" aria-label="5-day ICU demand prediction bar chart"></canvas></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span class="card-title">Predicted Metrics</span></div>
+            <div class="card-body"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">TOMORROW LOAD</div><div style="font-size:24px;font-weight:700;font-family:var(--font-display);color:var(--purple);">12</div><div style="font-size:11px;color:var(--text3);">+2 vs today</div></div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">ICU DEMAND</div><div style="font-size:24px;font-weight:700;font-family:var(--font-display);color:var(--red);">6</div><div style="font-size:11px;color:var(--text3);">+1 vs today</div></div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">PEAK HOUR</div><div style="font-size:24px;font-weight:700;font-family:var(--font-display);color:var(--amber);">10AM</div><div style="font-size:11px;color:var(--text3);">4 concurrent</div></div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">CONFIDENCE</div><div style="font-size:24px;font-weight:700;font-family:var(--font-display);color:var(--accent);">87%</div><div style="font-size:11px;color:var(--text3);">model accuracy</div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>`;
+    setTimeout(()=>makeChart('icuChart','bar',{labels:['Today','Tomorrow','Wed','Thu','Fri'],datasets:[{label:'Predicted Load',data:[10,12,11,14,13],backgroundColor:'rgba(168,85,247,0.25)',borderColor:'#a855f7',borderWidth:1,borderRadius:4},{label:'ICU Demand',data:[5,6,5,7,7],backgroundColor:'rgba(255,71,87,0.2)',borderColor:'#ff4757',borderWidth:1,borderRadius:4}]},chartOpts),50);
+
+  } else if (currentPage === 'resources') {
+    el.innerHTML = `
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><span class="card-title">Bed & Equipment Availability</span></div>
+          <div class="card-body">
+            ${resources.map(r=>`<div class="resource-item"><div class="resource-header"><span class="resource-name">${r.name}</span><span class="resource-stat" style="color:${r.used/r.total>0.8?'var(--red)':r.used/r.total>0.6?'var(--amber)':'var(--green)'};">${r.used}/${r.total} <span style="color:var(--text3);font-size:10px;">(${Math.round(r.used/r.total*100)}%)</span></span></div><div class="resource-bar"><div class="resource-fill" style="width:${Math.round(r.used/r.total*100)}%;background:${r.color};"></div></div></div>`).join('')}
+          </div>
+        </div>
+        <div class="card"><div class="card-header"><span class="card-title">Doctor Workload</span></div>
+          <div class="card-body">
+            ${doctors.map(d=>`<div class="doctor-row"><div class="doc-avatar" style="background:${d.color}22;color:${d.color};">${initials(d.name.replace('Dr. ',''))}</div><div class="doc-info"><div class="doc-name">${d.name}</div><div class="doc-spec">${d.spec}</div></div><div class="doc-bar-wrap"><div class="doc-bar"><div class="doc-fill" style="width:${Math.round(d.load/d.max*100)}%;background:${d.color};"></div></div></div><div class="doc-count">${d.load}/${d.max}</div></div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Wait Time Estimation</span></div>
+        <div class="card-body"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+          ${[{dept:'ICU',wait:0,unit:'immediate'},{dept:'Cardiac',wait:15,unit:'min'},{dept:'Neuro',wait:25,unit:'min'},{dept:'General',wait:40,unit:'min'},{dept:'OPD',wait:60,unit:'min'}].map(w=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">${w.dept}</div><div style="font-size:20px;font-weight:700;font-family:var(--font-display);color:${w.wait===0?'var(--red)':w.wait<30?'var(--amber)':'var(--text)'};">${w.wait===0?'0':w.wait}</div><div style="font-size:10px;color:var(--text3);">${w.unit}</div></div>`).join('')}
+        </div></div>
+      </div>`;
+
+  } else if (currentPage === 'reports') {
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header"><span class="card-title">Report Generator</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            ${[{title:'Daily Patient Report',desc:'All patients, vitals, risk levels',icon:'📋'},{title:'ICU Summary',desc:'Critical care status & bed usage',icon:'🏥'},{title:'Doctor Workload',desc:'Appointment distribution per physician',icon:'👨‍⚕️'},{title:'Risk Analytics',desc:'Risk trend & prediction report',icon:'📊'},{title:'Discharge Summary',desc:'Completed patient encounters today',icon:'✅'},{title:'Resource Utilization',desc:'Beds, equipment, wait times',icon:'🔧'}].map(r=>`
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="exportReport()">
+                <div style="font-size:20px;margin-bottom:8px;">${r.icon}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">${r.title}</div>
+                <div style="font-size:11px;color:var(--text3);">${r.desc}</div>
+                <div style="margin-top:10px;font-size:11px;color:var(--accent);font-family:var(--font-mono);">↓ Export CSV</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+  } else if (currentPage === 'settings') {
+    el.innerHTML = `
+      <div style="max-width:560px;">
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header"><span class="card-title">API Configuration</span></div>
+          <div class="card-body">
+            ${[{label:'Patient Monitoring API',val:'https://api.pulsetech.in/v2/patients'},{label:'Appointments Service',val:'https://api.pulsetech.in/v2/appointments'},{label:'WebSocket Endpoint',val:'wss://ws.pulsetech.in/live'},{label:'Auth Token',val:'••••••••••••••••••••••••••'}].map(s=>`
+              <div style="margin-bottom:12px;">
+                <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:5px;">${s.label}</div>
+                <div style="display:flex;gap:8px;">
+                  <input style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;outline:none;" value="${s.val}" readonly>
+                  <span style="display:flex;align-items:center;padding:0 10px;background:var(--green-bg);border:1px solid rgba(46,213,115,0.3);border-radius:6px;font-size:10px;color:var(--green);font-family:var(--font-mono);">✓ OK</span>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Alert Thresholds</span></div>
+          <div class="card-body">
+            ${[{label:'Heart Rate Critical',val:'> 110 bpm'},{label:'SpO2 Critical',val:'< 90%'},{label:'Temperature Alert',val:'> 38.5°C'},{label:'Auto-escalate after',val:'5 minutes'}].map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;color:var(--text2);">${t.label}</span><span style="font-size:12px;font-family:var(--font-mono);color:var(--accent);">${t.val}</span></div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+function filterAppt(filter) {
+  const sorted2=[...patients].sort((a,b)=>{const o={HIGH:0,MED:1,LOW:2};return o[a.risk]-o[b.risk]||b.age-a.age;});
+  const filtered=filter==='all'?sorted2:filter==='done'?sorted2.filter(p=>p.status==='done'):sorted2.filter(p=>p.risk===filter);
+  const tbody=document.getElementById('apptBody');
+  if(!tbody)return;
+  tbody.innerHTML=filtered.map(p=>`<tr class="${p.risk==='HIGH'?'critical':''}">
+    <td><span class="time-slot">${p.time}</span></td>
+    <td><div style="display:flex;align-items:center;gap:8px;"><div class="pat-avatar" style="width:26px;height:26px;font-size:10px;background:${riskBg(p.risk)};color:${riskColor(p.risk)};">${initials(p.name)}</div><span style="color:var(--text);font-weight:500;">${p.name}</span></div></td>
+    <td>${p.age}y</td><td style="color:var(--text);">${p.diag}</td><td>${p.doc}</td>
+    <td><span class="card-badge accent" style="font-size:10px;">${p.ward}</span></td>
+    <td><span class="risk-badge ${p.risk}">${p.risk}</span></td>
+    <td><span class="status-badge ${p.status}">${p.status.replace('-',' ')}</span></td>
+    <td><button class="btn" style="font-size:11px;padding:4px 10px;" onclick="openPatient(${p.id})">View</button></td>
+  </tr>`).join('');
+}
+
+document.getElementById('pageDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+setInterval(()=>{
+  patients.forEach(p=>{ p.hr=Math.max(60,Math.min(140,p.hr+(Math.random()-0.5)*4)); p.hr=Math.round(p.hr); });
+  if(currentPage==='patients') render();
+},3000);
+
+render();
+</script>
+</body>
+</html>
