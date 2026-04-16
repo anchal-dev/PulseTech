@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:5000/api';
+const BASE = 'https://pulsetech-backend.onrender.com';
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('pt_token');
